@@ -4,7 +4,13 @@ const port = process.env.PORT || 3000;
 const env = require('dotenv').config();
 const cors = require('cors');
 
-app.use(cors());
+const corsOptions = {
+    origin: ['http://localhost:5173'],
+    credentials: true,
+    optionSuccessStatus: 200,
+  };
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -33,7 +39,18 @@ async function run() {
         const queryCollection = client.db("ProductHub").collection("queries");
         const recommendationCollection = client.db("ProductHub").collection("recommendations");
 
+        //---------------------- Users API -----------------------------
 
+        app.get('/users', async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.json(users);
+        });
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
+            res.json(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
