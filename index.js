@@ -52,6 +52,22 @@ async function run() {
             res.json(result);
         });
 
+        // ---------------------- Queries API -----------------------------
+
+        app.get('/queries', async (req, res) => {
+            const queries = await queryCollection.find().toArray();
+            res.json(queries);
+        });
+
+        // get queries by user email 
+        
+
+        app.post('/queries', async (req, res) => {
+            const query = req.body;
+            const result = await queryCollection.insertOne(query);
+            res.json(result);
+        });
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
