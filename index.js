@@ -53,6 +53,27 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/users', (req, res) => {
+            let query = {};
+            if (req.query?.email) {
+                query = { email: req.query.email };
+            }
+            userCollection.findOne(query)
+                .then(user => {
+                    if (user) {
+                        res.send(user);
+                    } else {
+                        res.status(404).send('User not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error finding user:', error);
+                    res.status(500).send('Internal Server Error');
+                });
+        });
+
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
