@@ -72,8 +72,6 @@ async function run() {
                 });
         });
 
-
-
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
@@ -88,7 +86,6 @@ async function run() {
             res.send(result);
         });
 
-        // get queries by user email 
 
         app.get('/queries', async (req, res) => {
             let query = {};
@@ -130,6 +127,37 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await queryCollection.deleteOne(query);
+            res.json(result);
+        });
+
+        // ---------------------- Recommendations API -----------------------------
+
+        app.get('/recommendations/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await recommendationCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.get('/recommendations', async (req, res) => {
+            let query = {};
+            if (req.query?.email) {
+                query = { email: req.query.email };
+            }
+            const result = await recommendationCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.post('/recommendations', async (req, res) => {
+            const recommendation = req.body;
+            const result = await recommendationCollection.insertOne(recommendation);
+            res.json(result);
+        });
+
+        app.delete('/recommendations/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await recommendationCollection.deleteOne(query);
             res.json(result);
         });
 
