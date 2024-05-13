@@ -1,17 +1,39 @@
 const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const app = express();
 const port = process.env.PORT || 3000;
 const env = require('dotenv').config();
-const cors = require('cors');
 
-const corsOptions = {
+app.use(cors({
     origin: ['http://localhost:5173'],
     credentials: true,
     optionSuccessStatus: 200,
-};
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
+// const verifyToken = async (req, res, next) => {
+//     const token = req.cookies?.token;
+//     console.log('Token:', token);
+
+//     if (!token) {
+//         return res.status(401).send({ message: 'Unauthorized Access!' });
+//     }
+
+//     jwt.verify(token, process.env.JWT_SECRET_TOKEN, (err, decoded) => {
+//         if (err) {
+//             console.error('Token verification error:', err);
+//             return res.status(401).send({ message: 'Unauthorized Access!' });
+//         }
+
+//         console.log('Decoded Token:', decoded);
+//         req.user = decoded;
+//         next();
+//     });
+// };
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
@@ -39,10 +61,26 @@ async function run() {
         const queryCollection = client.db("ProductHub").collection("queries");
         const recommendationCollection = client.db("ProductHub").collection("recommendations");
 
+
+        // ---------------------- Authentication API -----------------------------
+
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            console.log(user);
+            const token = jwt.sign(user, process.env.JWT_SECRET_TOKEN, { expiresIn: '1h' });
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    sameSite: 'none',
+                    secure: false,
+                }).send({ success: true });
+        })
+
         //---------------------- Users API -----------------------------
 
         app.get('/users', async (req, res) => {
             const users = await userCollection.find().toArray();
+            console.log(req.cookies.token);
             res.json(users);
         });
 
@@ -53,23 +91,13 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/users', (req, res) => {
+        app.get('/users', async (req, res) => {
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query.email };
             }
-            userCollection.findOne(query)
-                .then(user => {
-                    if (user) {
-                        res.send(user);
-                    } else {
-                        res.status(404).send('User not found');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error finding user:', error);
-                    res.status(500).send('Internal Server Error');
-                });
+            const result = await userCollection.find(query).toArray();
+            res.send(result);
         });
 
         app.post('/users', async (req, res) => {
@@ -85,7 +113,6 @@ async function run() {
             const result = await queryCollection.findOne(query);
             res.send(result);
         });
-
 
         app.get('/queries', async (req, res) => {
             let query = {};
