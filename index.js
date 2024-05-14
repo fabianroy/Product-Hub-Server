@@ -15,26 +15,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// const verifyToken = async (req, res, next) => {
-//     const token = req.cookies?.token;
-//     console.log('Token:', token);
-
-//     if (!token) {
-//         return res.status(401).send({ message: 'Unauthorized Access!' });
-//     }
-
-//     jwt.verify(token, process.env.JWT_SECRET_TOKEN, (err, decoded) => {
-//         if (err) {
-//             console.error('Token verification error:', err);
-//             return res.status(401).send({ message: 'Unauthorized Access!' });
-//         }
-
-//         console.log('Decoded Token:', decoded);
-//         req.user = decoded;
-//         next();
-//     });
-// };
-
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
@@ -51,6 +31,12 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+
+const cookieOptions = {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    secure: process.env.NODE_ENV === "production" ? true : false,
+};
 
 async function run() {
     try {
@@ -69,20 +55,12 @@ async function run() {
             console.log(user);
             const token = jwt.sign(user, process.env.JWT_SECRET_TOKEN, { expiresIn: '1h' });
             res
-                .cookie('token', token, {
-                    httpOnly: true,
-                    sameSite: 'none',
-                    secure: false,
-                }).send({ success: true });
+                .cookie('token', token, cookieOptions).send({ success: true });
         })
 
-        //---------------------- Users API -----------------------------
 
-        app.get('/users', async (req, res) => {
-            const users = await userCollection.find().toArray();
-            console.log(req.cookies.token);
-            res.json(users);
-        });
+
+        //---------------------- Users API -----------------------------
 
         app.get('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -107,6 +85,7 @@ async function run() {
         });
 
         // ---------------------- Queries API -----------------------------
+
         app.get('/queries/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
