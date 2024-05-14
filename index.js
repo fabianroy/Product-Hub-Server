@@ -54,10 +54,14 @@ async function run() {
             const user = req.body;
             console.log(user);
             const token = jwt.sign(user, process.env.JWT_SECRET_TOKEN, { expiresIn: '1h' });
-            res
-                .cookie('token', token, cookieOptions).send({ success: true });
+            res.cookie('token', token, cookieOptions).send({ success: true });
         })
 
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            console.log('logging out:', user)
+            res.clearCookie('token', { maxAge: 0, httpOnly: true, sameSite: "none", secure: true }).send({ success: true })
+        });
 
 
         //---------------------- Users API -----------------------------
